@@ -24,7 +24,7 @@ csv_splitter = RecursiveCharacterTextSplitter(
     chunk_size=200, chunk_overlap=0, add_start_index=True
 )
 text_splitter = RecursiveCharacterTextSplitter(
-    chunk_size=500, chunk_overlap=50, add_start_index=True
+    chunk_size=700, chunk_overlap=70, add_start_index=True
 )
 card_splits = csv_splitter.split_documents(cards)
 doc1_splits = text_splitter.split_documents(doc1)
@@ -45,8 +45,11 @@ print("doc2 done")
 # create prompt template
 prompt = PromptTemplate.from_template(
     """
-    Ты помощник-ассистент, который отвечает на вопросы клиента. Используя следующий контекст для информации и ответь на вопрос клиента.
+    Ты помощник-ассистент, который отвечает на вопросы клиента.
+    Используй следующий контекст для информации и ответь на вопрос клиента.
     Если ты не знаешь или не нашел ответа, так и скажи.
+    Если ты нашел больше одной информации, то подробно скажи о каждой из них,
+    но пропусти похожую но не связанную информацию.
     Вопрос: {question} 
     Контекст: {context} 
     Ответ:
