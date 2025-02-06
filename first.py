@@ -31,8 +31,9 @@ doc1_splits = text_splitter.split_documents(doc1)
 doc2_splits = text_splitter.split_documents(doc2)
 
 # embed documents
-embeddings = OllamaEmbeddings(model="nomic-embed-text")
+embeddings = OllamaEmbeddings(model="bge-m3")
 vector_store = Chroma(embedding_function=embeddings)
+
 _ = vector_store.add_documents(documents=card_splits)
 print("Cards done")
 _ = vector_store.add_documents(documents=doc1_splits)
@@ -53,35 +54,36 @@ prompt = PromptTemplate.from_template(
 )
 
 llm = ChatOllama(model="llama3.1:8b")
+# define state for application
 class State(TypedDict):
     question: str
     context: List[Document]
     answer: str
 
-
-# Define application steps
+# retieve info from vector store
 def retrieve(state: State):
-    retrieved_docs = vector_store.similarity_search(state["question"], k=10)
-    print(retrieved_docs)
+    retrieved_docs = vector_store.similarity_search(state["question"])
+    for doc in retrieved_docs:
+        print(f"{doc.metadata}\n")
+        print(f"{doc.page_content}\n")
     return {"context": retrieved_docs}
 
-
+# generate ansver
 def generate(state: State):
     docs_content = "\n\n".join(doc.page_content for doc in state["context"])
     messages = prompt.invoke({"question": state["question"], "context": docs_content})
     response = llm.invoke(messages)
     return {"answer": response.content}
 
-
-# Compile application and test
+# create app with langgraph
 graph_builder = StateGraph(State).add_sequence([retrieve, generate])
 graph_builder.add_edge(START, "retrieve")
 graph = graph_builder.compile()
 
-# Initialize FastAPI app
+# initialize FastAPI app
 app = FastAPI()
 
-# Define request body
+# define request body
 class ChatRequest(BaseModel):
     message: str
 
