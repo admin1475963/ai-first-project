@@ -18,9 +18,11 @@ import os
 cards_loader = CSVLoader("./data/cards.csv")
 doc1_loader = PyPDFLoader("./data/doc1.pdf")
 doc2_loader = PyPDFLoader("./data/doc2.pdf")
+deepseekpdf_loader = PyPDFLoader("./data/DeepSeek_V3.pdf")
 cards = cards_loader.load()
 doc1 = doc1_loader.load()
 doc2 = doc2_loader.load()
+doc_deepseek = deepseekpdf_loader.load()
 
 # split text
 csv_splitter = RecursiveCharacterTextSplitter(
@@ -32,6 +34,7 @@ text_splitter = RecursiveCharacterTextSplitter(
 card_splits = csv_splitter.split_documents(cards)
 doc1_splits = text_splitter.split_documents(doc1)
 doc2_splits = text_splitter.split_documents(doc2)
+deepseek_splits = text_splitter.split_documents(doc_deepseek)
 
 if not os.environ.get("OPENAI_API_KEY"):
   os.environ["OPENAI_API_KEY"] = getpass.getpass("Enter API key for OpenAI: ")
@@ -39,12 +42,14 @@ if not os.environ.get("OPENAI_API_KEY"):
 # embed documents
 embeddings = OpenAIEmbeddings(model="text-embedding-3-large")
 vector_store = Chroma(embedding_function=embeddings, persist_directory="./vdb")
-#_ = vector_store.add_documents(documents=card_splits)
+_ = vector_store.add_documents(documents=card_splits)
 print("Cards done")
-#_ = vector_store.add_documents(documents=doc1_splits)
+_ = vector_store.add_documents(documents=doc1_splits)
 print("doc1 done")
-#_ = vector_store.add_documents(documents=doc2_splits)
+_ = vector_store.add_documents(documents=doc2_splits)
 print("doc2 done")
+_ = vector_store.add_documents(documents=deepseek_splits)
+print("deepseek done")
 
 
 # create prompt template
