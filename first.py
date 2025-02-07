@@ -1,13 +1,14 @@
 from langchain_community.document_loaders import PyPDFLoader, CSVLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_ollama import OllamaEmbeddings, ChatOllama
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_google_vertexai import VertexAIEmbeddings, ChatVertexAI
 from langchain_chroma import Chroma
 from langchain_core.prompts import PromptTemplate
 from typing_extensions import List, TypedDict
+from typing import Iterator
 from langchain_core.documents import Document
 from langgraph.graph import START, StateGraph
-from fastapi import FastAPI
-from pydantic import BaseModel
 import getpass
 import os
 
@@ -24,15 +25,15 @@ csv_splitter = RecursiveCharacterTextSplitter(
     chunk_size=200, chunk_overlap=0, add_start_index=True
 )
 text_splitter = RecursiveCharacterTextSplitter(
-    chunk_size=700, chunk_overlap=70, add_start_index=True
+    chunk_size=500, chunk_overlap=20, add_start_index=True
 )
 card_splits = csv_splitter.split_documents(cards)
 doc1_splits = text_splitter.split_documents(doc1)
 doc2_splits = text_splitter.split_documents(doc2)
 
 # embed documents
-embeddings = OllamaEmbeddings(model="bge-m3")
-vector_store = Chroma(embedding_function=embeddings)
+embeddings = HuggingFaceEmbeddings(model_name="ai-forever/sbert_large_nlu_ru")
+vector_store = Chroma(embedding_function=embeddings, persist_directory="./vdb")
 
 _ = vector_store.add_documents(documents=card_splits)
 print("Cards done")
@@ -93,5 +94,5 @@ class ChatRequest(BaseModel):
 @app.post("/message")
 async def chat(request: ChatRequest):
     output = graph.invoke({"question": request.message})
-    return {"response": output["response"]}
+    return {"response": output["answer"]}
 
